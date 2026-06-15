@@ -566,14 +566,11 @@
   var canvas = document.getElementById('sky-canvas');
   var ctx = canvas.getContext('2d');
   var STAGE = 480, CX = STAGE / 2, CY = STAGE / 2;
-  var cssScale = 1;
 
   function fitCanvas() {
     var dpr = window.devicePixelRatio || 1;
     canvas.width = STAGE * dpr; canvas.height = STAGE * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    var rect = canvas.getBoundingClientRect();
-    cssScale = rect.width / STAGE;
     requestRender();
   }
 
@@ -771,9 +768,13 @@
 
   /* ============================ INTERACTION =============================== */
   function toStage(ev) {
+    // Map client px -> original stage coordinates using the LIVE displayed size,
+    // so it stays correct even after the layout reflows or the canvas is resized.
     var rect = canvas.getBoundingClientRect();
-    var x = (ev.clientX - rect.left) / cssScale - CX;
-    var y = (ev.clientY - rect.top) / cssScale - CY;
+    var sx = rect.width ? STAGE / rect.width : 1;
+    var sy = rect.height ? STAGE / rect.height : 1;
+    var x = (ev.clientX - rect.left) * sx - CX;
+    var y = (ev.clientY - rect.top) * sy - CY;
     return { x: x, y: y };
   }
 
