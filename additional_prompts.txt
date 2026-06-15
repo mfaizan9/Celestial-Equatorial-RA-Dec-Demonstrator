@@ -1,0 +1,76 @@
+================================================================================
+ADDITIONAL PROMPTS — Celestial-Equatorial (RA/Dec) Demonstrator
+Follow-up requests given after the initial Flash -> HTML5 conversion.
+================================================================================
+
+--------------------------------------------------------------------------------
+1. Detect dev servers / launch.json
+--------------------------------------------------------------------------------
+Detect my project's dev servers and save all their configurations to
+.claude/launch.json, then ask which ones to start.
+
+```json
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "<server-name>",
+      "runtimeExecutable": "<command>",
+      "runtimeArgs": ["<args>"],
+      "port": <port>
+    }
+  ]
+}
+```
+
+Use runtimeExecutable for the command (e.g. "yarn", "npm", "node", "python") and
+runtimeArgs for its arguments. Call preview_start for each server the user wants to
+run.
+
+--------------------------------------------------------------------------------
+2. Panel heights + show all / hide all buttons
+--------------------------------------------------------------------------------
+The height of left box (selected) should be equal to the height of the right two
+boxes. Keep the aspect ratio unaltered.
+
+The buttons 'show all' and 'hide all' should be like this: Blue Buttons (pick color
+from foundation) and white text inside it.
+Centered in this box.
+Right now, the buttons are moving outside of box.
+
+(Attached: screenshot of the layout with the left "The Celestial Sphere" panel
+selected and the gray show all / hide all buttons overflowing the Labels box.)
+
+--------------------------------------------------------------------------------
+3. Label callout style (leader line)
+--------------------------------------------------------------------------------
+when we select something (for example 0h circle) it should be displayed like the
+attached screenshot
+
+(Attached: reference screenshot of the original Flash sim showing the "0h Circle"
+label offset from the sphere with a thin leader line pointing to the 0h circle.)
+
+--------------------------------------------------------------------------------
+4. Cross-platform / cross-browser compatibility
+--------------------------------------------------------------------------------
+make sure it's compatible across all OS and all browsers including safari
+
+--------------------------------------------------------------------------------
+5. Preview request
+--------------------------------------------------------------------------------
+i want preview of it
+
+--------------------------------------------------------------------------------
+6. East Arrow label spacing
+--------------------------------------------------------------------------------
+when i select 'East Arrow' the text 'East' should be slightly below the arrow.
+Right now, there is no space between them.
+
+--------------------------------------------------------------------------------
+7. This file
+--------------------------------------------------------------------------------
+write additional prompts that i gave in additional_prompts.txt file
+
+================================================================================
+END
+================================================================================
