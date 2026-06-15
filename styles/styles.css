@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Celestial-Equatorial (RA/Dec) Demonstrator -- sim-specific styles only.
+   The shared KL-UNL foundation (kl-unl.css) is never edited; everything here
+   layers on top of it. Sizing is in rem/em so it tracks the browser font
+   setting and reflows cleanly to phone-portrait widths and at 200% zoom.
+   ========================================================================== */
+
+/* The sim's interface font (Verdana), vendored from the decompiled export so the
+   look is self-contained even where Verdana is not installed. */
+@font-face {
+  font-family: 'SimVerdana';
+  src: url('../assets/fonts/Verdana.ttf') format('truetype');
+  font-weight: normal; font-style: normal; font-display: swap;
+}
+
+:root {
+  --sim-panel-gap: 0.6rem;
+}
+
+/* Comfortably large, zoomable body type (>= 1.125rem floor). */
+body { font-size: 1.125rem; line-height: 1.45; }
+
+/* ---- Layout: diagram on the left, control panels stacked on the right.
+   Mirrors the original panel grouping & reading order. Collapses to a single
+   stacked column below the foundation's 56rem breakpoint. ------------------ */
+.sim-layout.app-layout {
+  grid-template-columns: minmax(0, 1.55fr) minmax(17rem, 1fr);
+  gap: var(--sim-panel-gap);
+  padding: 0.5rem;
+  /* Stretch so the diagram panel (rows 1-2) matches the combined height of the
+     two stacked right-hand panels. Canvas keeps its square aspect ratio. */
+  align-items: stretch;
+}
+.sim-area-sky    { grid-column: 1; grid-row: 1 / span 2; }
+.sim-area-star   { grid-column: 2; grid-row: 1; }
+.sim-area-labels { grid-column: 2; grid-row: 2; }
+
+.panel { border-radius: 0.25rem; margin-bottom: 0; }
+.panel__heading { font-size: 1.15rem; }
+
+/* ---- Canvas: keep its internal coordinate system; CSS scales it to fit while
+   preserving the square aspect ratio. -------------------------------------- */
+/* Diagram panel: heading at top, square canvas centred in the remaining space,
+   help text below -- so the stretched panel has balanced whitespace. */
+.sim-area-sky { display: flex; flex-direction: column; }
+.sim-canvas-wrap {
+  padding: 0.5rem 0.75rem 0.75rem;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.sim-canvas {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  background: #f3f4f6;
+  border: 1px solid var(--border-color, #767676);
+  border-radius: 0.25rem;
+  touch-action: none;       /* dragging on the sphere must not scroll the page */
+}
+.sim-canvas:focus-visible {
+  outline-width: 0.125rem; outline-style: solid;
+  outline-color: var(--outline-color, #005fcc); outline-offset: 2px;
+}
+
+.sim-sky-help, .sim-star-help { font-size: 0.95rem; }
+.sim-sky-help kbd {
+  font: inherit; padding: 0 0.3em;
+  border: 1px solid var(--border-color, #767676); border-radius: 0.2rem;
+  background: #f3f4f6;
+}
+
+/* ---- Star Position sliders (a sim-specific accessible slider component,
+   layered on top of the foundation, never editing it). -------------------- */
+.sim-slider-row {
+  grid-template-columns: auto 5.5rem 1fr;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin-bottom: 0.8rem;
+}
+.sim-slider-row .control-row__label { font-weight: 700; }
+.sim-field { font-size: 1rem; width: 100%; min-height: 2.25rem; }
+
+.sim-field-wrap { display: inline-flex; align-items: baseline; gap: 0.15rem; }
+.sim-units { font-size: 1rem; }
+.sim-readout {
+  margin: 0.25rem 1rem 0;
+  font-size: 1.1rem;
+  padding: 0.4rem 0.6rem;
+  background: #f3f4f6;
+  border-radius: 0.25rem;
+}
+
+.sim-slider {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 2.25rem;
+  accent-color: var(--button-background-color, #005a9c);
+  cursor: pointer;
+}
+.sim-slider:focus-visible {
+  outline-width: 0.125rem; outline-style: solid;
+  outline-color: var(--outline-color, #005fcc); outline-offset: 2px;
+}
+
+/* ---- Labels panel ---- */
+/* box-sizing keeps the foundation's width:100% button-row inside the panel
+   padding (otherwise it overflows). Blue buttons with white text, centred. */
+.sim-label-buttons {
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.sim-label-buttons .button.sim-btn {
+  flex: 0 1 10rem;
+  background-color: var(--button-background-color, #005a9c);
+  color: var(--button-foreground-color, #ffffff);
+  border: var(--border-width, 1px) var(--border-style, solid) var(--border-color, #767676);
+  border-radius: 4px;
+  font-weight: 600;
+  text-align: center;
+}
+.sim-label-buttons .button.sim-btn:hover,
+.sim-label-buttons .button.sim-btn:focus-visible {
+  filter: brightness(var(--button-hover-darken, 0.9));
+}
+.sim-checkbox-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.sim-checkbox-list .control-choice { min-height: 2.25rem; }
+.sim-checkbox-list label { font-size: 1.05rem; }
+
+/* ---- Reflow: single stacked column on narrow / phone-portrait widths.
+   Keep the foundation's own 56rem collapse intact; this just defines the
+   stacked order and full-width panels. ------------------------------------- */
+@media (max-width: 56rem) {
+  .sim-layout.app-layout { grid-template-columns: 1fr; }
+  .sim-area-sky    { grid-column: 1; grid-row: auto; }
+  .sim-area-star   { grid-column: 1; grid-row: auto; }
+  .sim-area-labels { grid-column: 1; grid-row: auto; }
+  .sim-canvas { max-width: 26rem; }
+}
+
+@media (max-width: 30rem) {
+  body { font-size: 1.0625rem; }
+  .sim-layout.app-layout { padding: 0.35rem; }
+  .sim-slider-row { grid-template-columns: auto 1fr; }
+}
