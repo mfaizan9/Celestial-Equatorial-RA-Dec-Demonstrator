@@ -54,6 +54,13 @@
     return s + str;
   }
 
+  // Spoken form of a number for screen readers: a leading "-" glyph is routinely
+  // dropped, so render it as the word "minus".
+  function spokenNum(x, d) {
+    var t = asFixed(x, d);
+    return (t.charAt(0) === '-') ? 'minus ' + t.slice(1) : t;
+  }
+
   /* ========================================================================
      CelestialSphere engine -- faithful port of the AS prototype methods.
      One instance is the big sphere (r=160); a second nested instance is the
@@ -778,16 +785,19 @@
     return { x: x, y: y };
   }
 
-  var drag = null; // {mode:'view'|'star', ...}
+  var drag = null;          // {mode:'view'|'star', ...}
+  var canvasMode = 'view';  // what the canvas arrow keys control: 'view' or 'star'
   canvas.addEventListener('pointerdown', function (ev) {
     canvas.setPointerCapture(ev.pointerId);
+    canvas.focus();   // clicking the diagram focuses it, so the arrow keys work immediately
     var m = toStage(ev);
     // hit-test star: near star screen pos and star on the near side
     var st = OBJ.star._sp, dx = m.x - st.x, dy = m.y - st.y;
     if (st.z > 0 && Math.sqrt(dx * dx + dy * dy) <= 12) {
-      drag = { mode: 'star' };
+      drag = { mode: 'star' }; canvasMode = 'star';   // clicking the star -> arrows move the star
     } else {
       drag = { mode: 'view', x: m.x, y: m.y, theta: sphere._theta, phi: sphere._phi };
+      canvasMode = 'view';                            // clicking the sphere -> arrows rotate the view
     }
     ev.preventDefault();
   });
@@ -819,17 +829,44 @@
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', endDrag);
 
-  // keyboard: rotate the view from the focused canvas
+  // keyboard from the focused canvas: arrows control either the view or the star,
+  // toggled with Enter / M (clicking the sphere or the star also sets which one).
+  function setCanvasMode(m) {
+    canvasMode = m;
+    announce(m === 'star'
+      ? 'Arrow keys now move the star. ' + starDescription()
+      : 'Arrow keys now rotate the view. ' + viewDescription());
+  }
   canvas.addEventListener('keydown', function (ev) {
-    var step = ev.shiftKey ? 15 : 5, t = sphere.getTheta(), p = sphere.getPhi(), used = true;
-    switch (ev.key) {
-      case 'ArrowLeft':  sphere.setThetaAndPhi(t - step, p); break;
-      case 'ArrowRight': sphere.setThetaAndPhi(t + step, p); break;
-      case 'ArrowUp':    sphere.setThetaAndPhi(t, p + step); break;
-      case 'ArrowDown':  sphere.setThetaAndPhi(t, p - step); break;
-      default: used = false;
+    if (ev.key === 'Enter' || ev.key === 'm' || ev.key === 'M') {
+      setCanvasMode(canvasMode === 'view' ? 'star' : 'view');
+      ev.preventDefault(); return;
     }
-    if (used) { ev.preventDefault(); onSphereOrientationChanged(); requestRender(); announce(viewDescription()); }
+    var used = true;
+    if (canvasMode === 'star') {
+      // Move the star (same state as the RA/dec sliders). Shift = finer steps.
+      var raStep = ev.shiftKey ? 0.1 : 0.5, decStep = ev.shiftKey ? 1 : 5, ra = state.ra, dec = state.dec;
+      switch (ev.key) {
+        case 'ArrowLeft':  ra = clampRa(ra - raStep); break;
+        case 'ArrowRight': ra = clampRa(ra + raStep); break;
+        case 'ArrowUp':    dec = clampDec(dec + decStep); break;
+        case 'ArrowDown':  dec = clampDec(dec - decStep); break;
+        default: used = false;
+      }
+      if (used) { setStarLocation(ra, dec, false); requestRender(); announce(starDescription()); }
+    } else {
+      // Rotate the view. Shift = larger steps.
+      var step = ev.shiftKey ? 15 : 5, t = sphere.getTheta(), p = sphere.getPhi();
+      switch (ev.key) {
+        case 'ArrowLeft':  sphere.setThetaAndPhi(t - step, p); break;
+        case 'ArrowRight': sphere.setThetaAndPhi(t + step, p); break;
+        case 'ArrowUp':    sphere.setThetaAndPhi(t, p + step); break;
+        case 'ArrowDown':  sphere.setThetaAndPhi(t, p - step); break;
+        default: used = false;
+      }
+      if (used) { onSphereOrientationChanged(); requestRender(); announce(viewDescription()); }
+    }
+    if (used) ev.preventDefault();
   });
 
   /* ============================ CONTROLS ================================== */
@@ -889,25 +926,44 @@
     var decSign = state.dec >= 0 ? '+' : '';
     if (window.klunlShowEquation) {
       // Dynamic star coordinate readout (RA / dec with units) -- typeset by MathJax,
-      // paired with a spoken description for screen readers.
+      // paired with a spoken, units-complete description for screen readers.
       klunlShowEquation(
         ['star-eqn', '\\(\\mathrm{RA} = ' + asFixed(state.ra, 1) + '^{\\mathrm{h}}, \\quad \\mathrm{dec} = ' + decSign + asFixed(state.dec, 1) + '^{\\circ}\\)'],
-        ['star-eqn-sr', 'Star position: right ascension ' + asFixed(state.ra, 1) + ' hours, declination ' + asFixed(state.dec, 1) + ' degrees.'],
-        ['ra-sr', 'Right ascension ' + asFixed(state.ra, 1) + ' hours']);
-      document.getElementById('dec-sr').textContent = 'Declination ' + asFixed(state.dec, 1) + ' degrees';
+        ['star-eqn-sr', 'Star position: right ascension ' + spokenNum(state.ra, 1) + ' hours, declination ' + spokenNum(state.dec, 1) + ' degrees.']);
     }
-    raRange.setAttribute('aria-valuetext', asFixed(state.ra, 1) + ' hours');
-    decRange.setAttribute('aria-valuetext', asFixed(state.dec, 1) + ' degrees');
+    // The slider's spoken value (name comes from aria-label; this carries value + unit).
+    raRange.setAttribute('aria-valuetext', spokenNum(state.ra, 1) + ' hours');
+    decRange.setAttribute('aria-valuetext', spokenNum(state.dec, 1) + ' degrees');
   }
 
   function starDescription() {
-    return 'Star at right ascension ' + asFixed(state.ra, 1) + ' hours, declination ' + asFixed(state.dec, 1) + ' degrees.';
+    return 'Star at right ascension ' + spokenNum(state.ra, 1) + ' hours, declination ' + spokenNum(state.dec, 1) + ' degrees.';
   }
   function viewDescription() {
-    return 'View rotated. Azimuth ' + asFixed(mod(sphere.getTheta(), 360), 0) + ' degrees, tilt ' + asFixed(sphere.getPhi(), 0) + ' degrees. ' + starDescription();
+    return 'View rotated. Azimuth ' + spokenNum(mod(sphere.getTheta(), 360), 0) + ' degrees, tilt ' + spokenNum(sphere.getPhi(), 0) + ' degrees. ' + starDescription();
+  }
+  // Full, units-complete description of what the canvas currently depicts. Reached by
+  // screen readers via the canvas's aria-describedby; updated silently from state.
+  function describeScene() {
+    var shown = [];
+    if (state.labels.earthPoles) shown.push('Earth poles');
+    if (state.labels.equator) shown.push('equator');
+    if (state.labels.celPoles) shown.push('celestial poles');
+    if (state.labels.celEquator) shown.push('celestial equator');
+    if (state.labels.zeroHours) shown.push('zero-hour circle');
+    if (state.labels.ecliptic) shown.push('ecliptic');
+    if (state.labels.eastArrow) shown.push('east arrow');
+    return 'Celestial sphere with the Earth at its centre, viewed at azimuth ' +
+      spokenNum(mod(sphere.getTheta(), 360), 0) + ' degrees and tilt ' + spokenNum(sphere.getPhi(), 0) +
+      ' degrees. A star is plotted at right ascension ' + spokenNum(state.ra, 1) + ' hours, declination ' +
+      spokenNum(state.dec, 1) + ' degrees, with its right ascension and declination shown as coloured arcs. ' +
+      (shown.length ? 'Labels shown: ' + shown.join(', ') + '.' : 'No labels shown.') +
+      ' Arrow keys currently ' + (canvasMode === 'star' ? 'move the star' : 'rotate the view') +
+      '; press Enter to switch the arrow keys between rotating the view and moving the star.';
   }
   var live = document.getElementById('sr-status');
-  function announce(msg) { if (live) live.textContent = msg; }
+  var skyDesc = document.getElementById('sky-desc');
+  function announce(msg) { if (live) live.textContent = msg; if (skyDesc) skyDesc.textContent = describeScene(); }
 
   // klunlInitEqn is called by the foundation on load; redefine to set up our math
   // (dynamic readouts + a one-time typeset of the static inline math in the page).

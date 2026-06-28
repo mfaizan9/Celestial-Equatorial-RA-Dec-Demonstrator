@@ -33,15 +33,19 @@
                   tabindex="0"></canvas>
         </div>
 
-        <!-- Spoken description of the current diagram state (updated on commit). -->
-        <p id="sky-desc" class="sr-only" aria-live="polite"></p>
+        <!-- Screen-reader description of the current diagram state, read when the
+             canvas is focused (via aria-describedby). Not a live region -- change
+             announcements come from #sr-status to avoid double-speaking. -->
+        <p id="sky-desc" class="sr-only"></p>
 
         <p class="panel__help sim-sky-help">
           Drag anywhere on the sphere to rotate your view of it. Drag the
           <strong>star</strong> (on the near side) to move it, or use the
-          <em>Star Position</em> sliders. When the canvas is focused, use the
-          arrow keys to rotate the view (<kbd>Shift</kbd>&nbsp;+&nbsp;arrows for
-          larger steps).
+          <em>Star Position</em> sliders. Click the diagram (or <kbd>Tab</kbd> to it)
+          to give it keyboard focus, then use the <strong>arrow keys</strong>; press
+          <kbd>Enter</kbd> to switch the arrow keys between rotating the view and moving
+          the star (<kbd>Shift</kbd>&nbsp;+&nbsp;arrows for larger steps). Clicking the
+          star or the sphere also sets which one the arrows control.
         </p>
       </section>
 
@@ -65,8 +69,7 @@
             </span>
             <input class="control-row__slider sim-slider" type="range" autocomplete="off"
                    id="ra-range" min="0" max="24" step="0.1" value="4"
-                   aria-describedby="ra-sr">
-            <span id="ra-sr" class="sr-only"></span>
+                   aria-label="Right ascension">
           </div>
 
           <!-- Declination -->
@@ -82,8 +85,7 @@
             </span>
             <input class="control-row__slider sim-slider" type="range" autocomplete="off"
                    id="dec-range" min="-90" max="90" step="0.1" value="60"
-                   aria-describedby="dec-sr">
-            <span id="dec-sr" class="sr-only"></span>
+                   aria-label="Declination">
           </div>
         </fieldset>
 
@@ -127,7 +129,7 @@
             </div>
             <div class="control-choice">
               <input type="checkbox" autocomplete="off" id="cb-zerohours">
-              <label for="cb-zerohours"><span aria-hidden="true">\(0^{\mathrm{h}}\)</span><span class="sr-only">0h</span> Circle</label>
+              <label for="cb-zerohours"><span aria-hidden="true">\(0^{\mathrm{h}}\)</span><span class="sr-only">zero hour</span> Circle</label>
             </div>
             <div class="control-choice">
               <input type="checkbox" autocomplete="off" id="cb-ecliptic">
