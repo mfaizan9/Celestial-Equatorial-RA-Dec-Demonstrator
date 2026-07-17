@@ -110,6 +110,16 @@ original `helpLinkageName` was empty):
 5. The Flash slider was one widget (bar + numeric field). It is reproduced as a native
    range **plus** a numeric field, both editing the same state, for full keyboard and
    direct-entry parity.
+6. **MathJax scope narrowed (per later user instruction).** The original conversion rule
+   asked that *every* symbol be MathJax-typeset. On request, MathJax is now used only for
+   the one genuine equation — the star coordinate read-out `RA = 4.0ʰ, dec = +60.0°`.
+   The plain labels/units (`RA:`, `dec:`, `h`, `°`, `0h`) are ordinary text/Unicode. No
+   values or meanings changed; units are still spoken as words via `aria-label` /
+   `aria-valuetext`.
+7. **Diagram keyboard control (added feature).** The diagram provides two Tab stops — the
+   sphere (rotate the view with arrows) then the star (move it with arrows) — and each
+   takes focus on click. The star also remains controllable via the RA/dec sliders. This
+   adds keyboard access; it does not change the simulation's behaviour or numbers.
 
 No physics, constant, formula, or educational/label text was changed to satisfy
 accessibility — only presentation (orientation, colour-supplementing, controls).

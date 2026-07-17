@@ -771,6 +771,18 @@
     for (i = 0; i < sphere.objects.length; i++) { var o3 = sphere.objects[i]; if (o3.label) drawLabel(o3); }
 
     ctx.restore();
+    positionStarHandle();
+  }
+
+  // Keep the focusable star control positioned over the star (so its focus ring
+  // lands on the star). Uses the same live geometry as the pointer mapping.
+  function positionStarHandle() {
+    if (!starHandle) return;
+    var op = starHandle.offsetParent; if (!op) return;
+    var cr = canvas.getBoundingClientRect(), wr = op.getBoundingClientRect();
+    var scale = cr.width / STAGE, sp = OBJ.star._sp;
+    starHandle.style.left = (cr.left - wr.left + (CX + sp.x) * scale) + 'px';
+    starHandle.style.top  = (cr.top - wr.top + (CY + sp.y) * scale) + 'px';
   }
 
   /* ============================ INTERACTION =============================== */
@@ -786,18 +798,18 @@
   }
 
   var drag = null;          // {mode:'view'|'star', ...}
-  var canvasMode = 'view';  // what the canvas arrow keys control: 'view' or 'star'
+  var starHandle = document.getElementById('star-handle');   // focusable star control
   canvas.addEventListener('pointerdown', function (ev) {
     canvas.setPointerCapture(ev.pointerId);
-    canvas.focus();   // clicking the diagram focuses it, so the arrow keys work immediately
     var m = toStage(ev);
     // hit-test star: near star screen pos and star on the near side
     var st = OBJ.star._sp, dx = m.x - st.x, dy = m.y - st.y;
     if (st.z > 0 && Math.sqrt(dx * dx + dy * dy) <= 12) {
-      drag = { mode: 'star' }; canvasMode = 'star';   // clicking the star -> arrows move the star
+      drag = { mode: 'star' };
+      if (starHandle) starHandle.focus();   // clicking the star selects the star control
     } else {
       drag = { mode: 'view', x: m.x, y: m.y, theta: sphere._theta, phi: sphere._phi };
-      canvasMode = 'view';                            // clicking the sphere -> arrows rotate the view
+      canvas.focus();                        // clicking the sphere selects the view (rotate) control
     }
     ev.preventDefault();
   });
@@ -829,44 +841,31 @@
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', endDrag);
 
-  // keyboard from the focused canvas: arrows control either the view or the star,
-  // toggled with Enter / M (clicking the sphere or the star also sets which one).
-  function setCanvasMode(m) {
-    canvasMode = m;
-    announce(m === 'star'
-      ? 'Arrow keys now move the star. ' + starDescription()
-      : 'Arrow keys now rotate the view. ' + viewDescription());
-  }
+  // Focused canvas (the sphere): arrow keys rotate the view (Shift = larger steps).
   canvas.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Enter' || ev.key === 'm' || ev.key === 'M') {
-      setCanvasMode(canvasMode === 'view' ? 'star' : 'view');
-      ev.preventDefault(); return;
+    var step = ev.shiftKey ? 15 : 5, t = sphere.getTheta(), p = sphere.getPhi(), used = true;
+    switch (ev.key) {
+      case 'ArrowLeft':  sphere.setThetaAndPhi(t - step, p); break;
+      case 'ArrowRight': sphere.setThetaAndPhi(t + step, p); break;
+      case 'ArrowUp':    sphere.setThetaAndPhi(t, p + step); break;
+      case 'ArrowDown':  sphere.setThetaAndPhi(t, p - step); break;
+      default: used = false;
     }
-    var used = true;
-    if (canvasMode === 'star') {
-      // Move the star (same state as the RA/dec sliders). Shift = finer steps.
-      var raStep = ev.shiftKey ? 0.1 : 0.5, decStep = ev.shiftKey ? 1 : 5, ra = state.ra, dec = state.dec;
-      switch (ev.key) {
-        case 'ArrowLeft':  ra = clampRa(ra - raStep); break;
-        case 'ArrowRight': ra = clampRa(ra + raStep); break;
-        case 'ArrowUp':    dec = clampDec(dec + decStep); break;
-        case 'ArrowDown':  dec = clampDec(dec - decStep); break;
-        default: used = false;
-      }
-      if (used) { setStarLocation(ra, dec, false); requestRender(); announce(starDescription()); }
-    } else {
-      // Rotate the view. Shift = larger steps.
-      var step = ev.shiftKey ? 15 : 5, t = sphere.getTheta(), p = sphere.getPhi();
-      switch (ev.key) {
-        case 'ArrowLeft':  sphere.setThetaAndPhi(t - step, p); break;
-        case 'ArrowRight': sphere.setThetaAndPhi(t + step, p); break;
-        case 'ArrowUp':    sphere.setThetaAndPhi(t, p + step); break;
-        case 'ArrowDown':  sphere.setThetaAndPhi(t, p - step); break;
-        default: used = false;
-      }
-      if (used) { onSphereOrientationChanged(); requestRender(); announce(viewDescription()); }
+    if (used) { ev.preventDefault(); onSphereOrientationChanged(); requestRender(); announce(viewDescription()); }
+  });
+
+  // Focused star marker (2nd Tab stop): arrow keys move the star (Shift = finer steps).
+  if (starHandle) starHandle.addEventListener('keydown', function (ev) {
+    var used = true, raStep = ev.shiftKey ? 0.1 : 0.5, decStep = ev.shiftKey ? 1 : 5, ra = state.ra, dec = state.dec;
+    switch (ev.key) {
+      case 'ArrowLeft':  ra = clampRa(ra - raStep); break;
+      case 'ArrowRight': ra = clampRa(ra + raStep); break;
+      case 'ArrowUp':    dec = clampDec(dec + decStep); break;
+      case 'ArrowDown':  dec = clampDec(dec - decStep); break;
+      case 'Enter': case ' ': ev.preventDefault(); return;  // no activation; avoid page scroll
+      default: used = false;
     }
-    if (used) ev.preventDefault();
+    if (used) { ev.preventDefault(); setStarLocation(ra, dec, false); requestRender(); announce(starDescription()); }
   });
 
   /* ============================ CONTROLS ================================== */
@@ -896,6 +895,31 @@
   }
   raField.addEventListener('change', function () { commitField(raField, true); });
   decField.addEventListener('change', function () { commitField(decField, false); });
+
+  // When a value field is focused, Up/Down arrows and the mouse wheel step the value
+  // (Shift = larger step), like a native number stepper. Both drive the same state.
+  function stepField(field, isRa, delta) {
+    var cur = isRa ? clampRa(field.value) : clampDec(field.value);
+    var v = isRa ? clampRa(cur + delta) : clampDec(cur + delta);
+    if (isRa) setStarLocation(v, state.dec, false); else setStarLocation(state.ra, v, false);
+    requestRender(); announce(starDescription());
+  }
+  function wireFieldStepping(field, isRa) {
+    field.addEventListener('keydown', function (ev) {
+      var dir = (ev.key === 'ArrowUp' || ev.key === 'PageUp') ? 1
+              : (ev.key === 'ArrowDown' || ev.key === 'PageDown') ? -1 : 0;
+      if (!dir) return;
+      ev.preventDefault();
+      stepField(field, isRa, dir * (ev.shiftKey || ev.key === 'PageUp' || ev.key === 'PageDown' ? 1 : 0.1));
+    });
+    field.addEventListener('wheel', function (ev) {
+      if (document.activeElement !== field) return;   // only when the field is selected
+      ev.preventDefault();
+      stepField(field, isRa, (ev.deltaY < 0 ? 1 : -1) * (ev.shiftKey ? 1 : 0.1));
+    }, { passive: false });
+  }
+  wireFieldStepping(raField, true);
+  wireFieldStepping(decField, false);
 
   for (var key in checks) (function (k) {
     checks[k].addEventListener('change', function () {
@@ -934,6 +958,10 @@
     // The slider's spoken value (name comes from aria-label; this carries value + unit).
     raRange.setAttribute('aria-valuetext', spokenNum(state.ra, 1) + ' hours');
     decRange.setAttribute('aria-valuetext', spokenNum(state.dec, 1) + ' degrees');
+    // The focusable star marker announces the current position + how to move it.
+    if (starHandle) starHandle.setAttribute('aria-label',
+      'Star at right ascension ' + spokenNum(state.ra, 1) + ' hours, declination ' + spokenNum(state.dec, 1) +
+      ' degrees. Use the arrow keys to move it: left and right change right ascension, up and down change declination.');
   }
 
   function starDescription() {
@@ -958,8 +986,7 @@
       ' degrees. A star is plotted at right ascension ' + spokenNum(state.ra, 1) + ' hours, declination ' +
       spokenNum(state.dec, 1) + ' degrees, with its right ascension and declination shown as coloured arcs. ' +
       (shown.length ? 'Labels shown: ' + shown.join(', ') + '.' : 'No labels shown.') +
-      ' Arrow keys currently ' + (canvasMode === 'star' ? 'move the star' : 'rotate the view') +
-      '; press Enter to switch the arrow keys between rotating the view and moving the star.';
+      ' Arrow keys rotate this view; Tab to the star marker to move the star with the arrow keys instead.';
   }
   var live = document.getElementById('sr-status');
   var skyDesc = document.getElementById('sky-desc');
@@ -975,6 +1002,25 @@
   };
 
   /* ============================ STARTUP ================================== */
+  // Keep the one MathJax equation out of the Tab order. MathJax marks its rendered
+  // containers tabbable (for its keyboard menu); we force tabindex="-1" so Tab skips
+  // it. Right-click still opens the MathJax menu. A MutationObserver re-applies this
+  // every time the equation is re-typeset (it updates as the star moves).
+  (function () {
+    var el = document.getElementById('star-eqn');
+    if (!el) return;
+    function strip() {
+      var cs = el.querySelectorAll('mjx-container[tabindex]:not([tabindex="-1"])');
+      for (var i = 0; i < cs.length; i++) cs[i].setAttribute('tabindex', '-1');
+    }
+    if (window.MutationObserver) {
+      new MutationObserver(strip).observe(el, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex']
+      });
+    }
+    strip();
+  })();
+
   window.addEventListener('resize', fitCanvas);
   // Re-render once the vendored font has loaded so canvas labels use it.
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(requestRender);

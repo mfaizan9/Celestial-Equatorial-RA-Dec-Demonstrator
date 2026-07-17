@@ -31,6 +31,10 @@
                   role="img" aria-label="Celestial sphere diagram"
                   aria-describedby="sky-desc"
                   tabindex="0"></canvas>
+          <!-- Focusable star control (2nd Tab stop). Positioned over the star by the
+               script; pointer-events:none so the mouse still reaches the canvas. -->
+          <div id="star-handle" tabindex="0" role="button"
+               aria-label="Star. Use the arrow keys to move it."></div>
         </div>
 
         <!-- Screen-reader description of the current diagram state, read when the
@@ -39,13 +43,12 @@
         <p id="sky-desc" class="sr-only"></p>
 
         <p class="panel__help sim-sky-help">
-          Drag anywhere on the sphere to rotate your view of it. Drag the
-          <strong>star</strong> (on the near side) to move it, or use the
-          <em>Star Position</em> sliders. Click the diagram (or <kbd>Tab</kbd> to it)
-          to give it keyboard focus, then use the <strong>arrow keys</strong>; press
-          <kbd>Enter</kbd> to switch the arrow keys between rotating the view and moving
-          the star (<kbd>Shift</kbd>&nbsp;+&nbsp;arrows for larger steps). Clicking the
-          star or the sphere also sets which one the arrows control.
+          Drag anywhere on the sphere to rotate your view of it, or drag the
+          <strong>star</strong> (on the near side) to move it. For keyboard control,
+          <kbd>Tab</kbd> to the diagram and use the <strong>arrow keys</strong> to rotate
+          the view; <kbd>Tab</kbd> again to select the <strong>star</strong> and use the
+          arrow keys to move it (<kbd>Shift</kbd> for larger / finer steps). The
+          <em>Star Position</em> sliders also move the star.
         </p>
       </section>
 
@@ -59,13 +62,13 @@
           <!-- Right ascension -->
           <div class="control-row sim-slider-row">
             <label class="control-row__label" for="ra-range">
-              <span id="ra-eqn" aria-hidden="true">\(\mathrm{RA}\!:\)</span>
+              <span aria-hidden="true">RA:</span>
             </label>
             <span class="sim-field-wrap">
               <input class="control-row__input sim-field" type="text" inputmode="decimal" autocomplete="off"
                      id="ra-field" value="4.0" maxlength="6"
                      aria-label="Right ascension, hours">
-              <span class="sim-units" aria-hidden="true">\(^{\mathrm{h}}\)</span>
+              <span class="sim-units" aria-hidden="true">h</span>
             </span>
             <input class="control-row__slider sim-slider" type="range" autocomplete="off"
                    id="ra-range" min="0" max="24" step="0.1" value="4"
@@ -75,13 +78,13 @@
           <!-- Declination -->
           <div class="control-row sim-slider-row">
             <label class="control-row__label" for="dec-range">
-              <span id="dec-eqn" aria-hidden="true">\(\mathrm{dec}\!:\)</span>
+              <span aria-hidden="true">dec:</span>
             </label>
             <span class="sim-field-wrap">
               <input class="control-row__input sim-field" type="text" inputmode="decimal" autocomplete="off"
                      id="dec-field" value="60.0" maxlength="6"
                      aria-label="Declination, degrees">
-              <span class="sim-units" aria-hidden="true">\(^{\circ}\)</span>
+              <span class="sim-units" aria-hidden="true">&deg;</span>
             </span>
             <input class="control-row__slider sim-slider" type="range" autocomplete="off"
                    id="dec-range" min="-90" max="90" step="0.1" value="60"
@@ -129,7 +132,7 @@
             </div>
             <div class="control-choice">
               <input type="checkbox" autocomplete="off" id="cb-zerohours">
-              <label for="cb-zerohours"><span aria-hidden="true">\(0^{\mathrm{h}}\)</span><span class="sr-only">zero hour</span> Circle</label>
+              <label for="cb-zerohours"><span aria-hidden="true">0h</span><span class="sr-only">zero hour</span> Circle</label>
             </div>
             <div class="control-choice">
               <input type="checkbox" autocomplete="off" id="cb-ecliptic">

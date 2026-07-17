@@ -20,12 +20,14 @@ responsive grid.
   declination 60.0 degrees."*, *"Ecliptic labels shown."*, *"View rotated. Azimuth …"*.
 
 ## Equations / math (MathJax)
-- The slider labels (`RA:`, `dec:`), the unit symbols (`ʰ`, `°`), the `0ʰ` in the
-  "0ʰ Circle" checkbox, and a dynamic star-coordinate read-out
-  (`RA = 4.0ʰ, dec = +60.0°`) are all typeset by **MathJax** via the foundation
-  helper (`klunlShowEquation` / `klunlInitEqn`), paired with spoken screen-reader
-  strings. Right-clicking any of this math opens MathJax's own menu ("Show Math As →
-  TeX / MathML"); the menu is left enabled.
+- **MathJax is used only for the actual coordinate equation** — the dynamic star
+  read-out `RA = 4.0ʰ, dec = +60.0°` (typeset via `klunlShowEquation` / `klunlInitEqn`,
+  paired with a spoken screen-reader string; right-clicking it opens MathJax's menu).
+  Per an explicit later instruction, the plain labels and unit glyphs that are **not**
+  equations — the slider labels `RA:` / `dec:`, the unit marks `h` / `°`, and the `0h`
+  in the "0h Circle" checkbox — are now ordinary text/Unicode, not MathJax. (This
+  narrows the original conversion rule that every symbol be MathJax-typeset; the units
+  are still spoken as words via the controls' `aria-label` / `aria-valuetext`.)
 - **Canvas-baked text caveat (1.1.1 / 1.4.4):** the labels and numeric read-outs that
   ride *on the rotating 3-D sphere* (`North Pole`, `Ecliptic`, the `4.0ʰ`/`60.0°`
   values, etc.) are painted on the `<canvas>` and therefore cannot expose the MathJax
@@ -50,16 +52,17 @@ responsive grid.
   degrees"); see the AUDIO / SCREEN-READER PASS section below. A numeric field mirrors
   each slider for direct entry. Both paths mutate the same state. Tab moves away
   cleanly; no traps.
-- The **canvas is focusable** (`tabindex="0"`) and also **takes focus on click**, so
-  the arrow keys work immediately after a pointer interaction (no separate Tab needed).
-- On the focused canvas the arrow keys control **either the view or the star**:
-  - default mode rotates the view (Shift + arrows = larger steps);
-  - **Enter** (or **M**) toggles to "move the star" mode, where arrows change the star's
-    RA/dec (Shift + arrows = finer steps); the change is announced;
-  - clicking the **star** vs. the **sphere** also sets which one the arrows control.
-- The star therefore has two keyboard paths: the RA/dec sliders/fields, and the canvas
-  arrow keys in star mode — both mutate the same state. The current mode is stated in the
-  canvas's `aria-describedby` description.
+- The diagram exposes **two consecutive Tab stops**: the **sphere** (the `<canvas>`,
+  1st) and the **star** (a focusable marker, 2nd). Each also **takes focus on click**
+  (clicking the sphere focuses the sphere; clicking the star focuses the star), so the
+  arrow keys work immediately after a pointer interaction.
+  - **Sphere focused** → arrow keys rotate the view (Shift + arrows = larger steps).
+  - **Star focused** → arrow keys move the star: Left/Right change right ascension,
+    Up/Down change declination (Shift + arrows = finer steps); the new position is
+    announced. The star marker is positioned over the star so its focus ring lands on it.
+- The star therefore has two keyboard paths: the RA/dec sliders/fields, and the focused
+  star marker's arrow keys — both mutate the same state. The canvas's `aria-describedby`
+  description tells the user to Tab to the star marker to move the star.
 - The masthead's modal manages its own focus trap/restore and Escape; the sim does
   not fight it.
 

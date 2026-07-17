@@ -50,6 +50,25 @@ body { font-size: 1.125rem; line-height: 1.45; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;   /* containing block for the star handle */
+}
+
+/* Focusable star control: invisible until focused, and the mouse passes through it
+   to the canvas. The script positions it over the star, so its focus ring lands on
+   the star. */
+#star-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: -0.8rem 0 0 -0.8rem;   /* centre the box on the star point */
+  border-radius: 50%;
+  pointer-events: none;
+}
+#star-handle:focus-visible {
+  outline: 0.125rem solid var(--outline-color, #005fcc);
+  outline-offset: 0.125rem;
 }
 .sim-canvas {
   display: block;
